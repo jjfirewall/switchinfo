@@ -1,0 +1,84 @@
+rom netmiko import ConnectHandler
+from netmiko.ssh_exception import NetMikoTimeoutException
+from netmiko.ssh_exception import SSHException
+from netmiko.ssh_exception import AuthenticationException
+
+import re
+
+ip_list = ['10.0.0.1', '10.0.0.2']
+
+switchinfo = []
+
+f = open("switchinfo.txt", "w+")
+f.write("IP Address, Hostname, Serial_Number, Device_model")
+f.write("\n")
+f.close()
+
+f = open("login_issues.txt", "w+")
+f.write("IP Address, Status")
+f.write("\n")
+f.close()
+
+for ip in ip_list:
+    cisco = {
+    'device_type':'cisco_ios',
+    'ip':ip,
+    'username':'admin',
+    'password':'cisco',
+    'secret':'cisco',
+    'ssh_strict':False,
+    'fast_cli':False,
+    }
+
+    try:
+        net_connect = ConnectHandler(**cisco)
+    except NetMikoTimeoutException:
+        f = open("login_issues.txt", "a")
+        f.write(ip + "," + "Device Unreachable/SSH not enabled")
+        f.write("\n")
+        f.close()
+        continue
+    except AuthenticationException:
+        f = open("login_issues.csv", "a")
+        f.write(ip + "," + "Authentication Failure")
+        f.write("\n")
+        f.close()
+        continue
+    except SSHException:
+        f = open("login_issues.csv", "a")
+        f.write(ip + "," + "SSH not enabled")
+        f.write("\n")
+        f.close()
+        continue
+
+    try:
+        net_connect.enable()
+    except ValueError:
+        f = open("login_issues.csv", "a")
+        f.write(ip + "," + "Could be SSH Enable Password issue")
+        f.write("\n")
+        f.close()
+        continue
+
+sh_ver_output = net_connect.send_command('show version')
+regex_hostname = re.compile(r'(\S+)\suptime')
+hostname = regex_hostname.findall(sh_ver_output)
+
+regex_version = re.compile(r'Cisco\sIOS\sSoftware.+Version\s([^,]+)')
+version = regex_version.findall(sh_ver_output)
+
+regex_serial = re.compile(r'Processor\sboard\sID\s(\S+)')
+serial = regex_serial.findall(sh_ver_output)
+
+regex_model = re.compile(r'[Cc]isco\s(\S+).*memory.')
+model = regex_model.findall(sh_ver_output)
+
+devices.append([ip, hostname[0],version[0],ios[0],serial[0],model[0]])
+
+for i in devices:
+    i = ", ".join(i)
+    f = open("switchinfo.txt", "a")
+    f.write(i)
+    f.write("\n")
+    
+    
