@@ -1,7 +1,7 @@
-rom netmiko import ConnectHandler
-from netmiko.ssh_exception import NetMikoTimeoutException
-from netmiko.ssh_exception import SSHException
-from netmiko.ssh_exception import AuthenticationException
+from netmiko import ConnectHandler
+from netmiko.exceptions import NetMikoTimeoutException
+from netmiko.exceptions import SSHException
+from netmiko.exceptions import AuthenticationException
 
 import re
 
@@ -53,6 +53,7 @@ for ip in ip_list:
 
     try:
         net_connect.enable()
+
     except ValueError:
         f = open("login_issues.csv", "a")
         f.write(ip + "," + "Could be SSH Enable Password issue")
@@ -60,25 +61,31 @@ for ip in ip_list:
         f.close()
         continue
 
-sh_ver_output = net_connect.send_command('show version')
-regex_hostname = re.compile(r'(\S+)\suptime')
-hostname = regex_hostname.findall(sh_ver_output)
+    sh_ver_output = net_connect.send_command('show version')
 
-regex_version = re.compile(r'Cisco\sIOS\sSoftware.+Version\s([^,]+)')
-version = regex_version.findall(sh_ver_output)
+    regex_hostname = re.compile(r'(\S+)\suptime')
+    hostname = regex_hostname.findall(sh_ver_output)
 
-regex_serial = re.compile(r'Processor\sboard\sID\s(\S+)')
-serial = regex_serial.findall(sh_ver_output)
+    regex_version = re.compile(r'Cisco\sIOS\sSoftware.+Version\s([^,]+)')
+    version = regex_version.findall(sh_ver_output)
 
-regex_model = re.compile(r'[Cc]isco\s(\S+).*memory.')
-model = regex_model.findall(sh_ver_output)
+    regex_serial = re.compile(r'Processor\sboard\sID\s(\S+)')
+    serial = regex_serial.findall(sh_ver_output)
 
-devices.append([ip, hostname[0],version[0],ios[0],serial[0],model[0]])
+    regex_model = re.compile(r'[Cc]isco\s(\S+).*memory.')
+    model = regex_model.findall(sh_ver_output)
 
-for i in devices:
-    i = ", ".join(i)
-    f = open("switchinfo.txt", "a")
-    f.write(i)
-    f.write("\n")
-    
-    
+    regex_ios = re.compile(r'System\simage\sfile\sis\s"([^ "]+)')
+    ios = regex_ios.findall(sh_ver_output)
+
+switchinfo.append([ip, hostname[0],version[0],ios[0],serial[0],model[0]])
+
+for i in switchinfo:
+        i = ", ".join(i)
+        f = open("switchinfo.txt", "a")
+        f.write(i)
+        f.write("\n")
+
+
+
+
